@@ -174,7 +174,10 @@
 ## Ссылки на файлы:
 >[automatization](./Task4/step4.sh) - скрипт, для включения системы мониторинга;   
 >[deployment](./Task4/depl-site.yaml);      
->[service](./Task4/svc-site.yaml).      
+>[service](./Task4/svc-site.yaml).    
+
+>[Доступ к Grafana](http://51.250.99.117:30481/query)       
+>[Доступ к Prometheus](http://51.250.99.117:31278)       
 
                              
 ![localImage](./Images/Yes.png)
