@@ -1,0 +1,84 @@
+# k8s_containrd_pkg.yml
+---
+- hosts: "runner"
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: yes
+  connection: ssh
+  
+  tasks:
+
+   - name: Add ubuntu to group sudo
+     ansible.builtin.user:
+       name: ubuntu
+       group: sudo
+
+   - name: Changing perm of motd files 
+     command: find /etc/update-motd.d/ -type f -exec chmod 644 {} \;
+     become_method: sudo
+     become: yes
+
+   - name: Changing perm of 50-landscape-sysinfo 
+     file: dest=/etc/update-motd.d/50-landscape-sysinfo mode=a+x
+     become_method: sudo
+     become: yes
+
+   - name: Add Dockers official GPG key
+     apt_key:
+       url: https://download.docker.com/linux/ubuntu/gpg
+       state: present
+
+   - name: Add Docker Repository
+     apt_repository:
+       repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+       state: present
+       filename: docker
+       update_cache: yes
+
+   - name: Add gitlab-runner GPG key gitlab-runner
+     ansible.builtin.shell: 
+       cmd: curl -s https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
+     become_method: sudo
+     become: yes    
+
+   - name: Installing dependent packages
+     apt: 
+       name:
+         - vim
+         - git
+         - tmux
+         - openvpn
+         - docker.io
+         - gitlab-runner
+       state: present
+
+   - name: Add gitlab-runner to group sudo
+     ansible.builtin.user:
+       name: gitlab-runner
+       group: sudo
+
+   - name: Create ssh directory
+     ansible.builtin.file:
+       path: /home/gitlab-runner/.ssh
+       state: directory
+       owner: gitlab-runner
+       group: gitlab-runner
+       mode: '0700'
+
+   - name: Copy ssh file
+     ansible.builtin.copy:
+       src: /home/admuser/.ssh/id_ed25519
+       dest: /home/gitlab-runner/.ssh
+       owner: gitlab-runner
+       group: gitlab-runner
+       mode: '0600'
+
+   - name: Reboot
+     reboot:
+       post_reboot_delay: 60
+       reboot_timeout: 80
+       connect_timeout: 300
+       test_command: uptime
+...

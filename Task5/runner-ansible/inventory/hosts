@@ -1,0 +1,2 @@
+[runner]
+runner ansible_host=158.160.27.248 ansible_user=ubuntu ansible_ssh_private_key_file=/home/admuser/.ssh/id_ed25519

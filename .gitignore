@@ -1,0 +1,25 @@
+temp/
+# Task1
+*/*/persona*
+*/*/.terraform/
+*/*/.terraform.lo*
+*/*/terraform.tfstat*
+*/*/providers.t?
+*/*/*/providers.t?
+*/*/providers.t*
+*/*/*/providers.t*
+
+
+
+# Task2
+*/persona*
+*/temp/
+*/.terraform/
+*/.terraform.lo*
+*/terraform.tfstat*
+# Task3
+
+
+# Task5
+*/*/persona*
+*/temp/
