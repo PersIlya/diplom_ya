@@ -1,0 +1,80 @@
+stages:
+  - build
+  - push
+  - deploy
+variables:
+  IMAGE_NAME: "porsev-nginx"
+  DOCKER_IMAGE_TAG: $DOCKER_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  DOCKER_REGISTRY_IMAGE: $DOCKER_REGISTRY_USER/$IMAGE_NAME
+before_script:
+  - echo $DOCKER_ACCESS_TOKEN | docker login -u $DOCKER_REGISTRY_USER --password-stdin 
+# - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_ACCESS_TOKEN
+
+Build:
+  stage: build
+  tags:
+    - shell
+  script:
+    - docker pull $DOCKER_REGISTRY_IMAGE:latest || true
+    - >
+      docker build
+      --pull
+      --cache-from $DOCKER_REGISTRY_IMAGE:latest
+      --label "org.opencontainers.image.title=$CI_PROJECT_TITLE"
+      --label "org.opencontainers.image.url=$CI_PROJECT_URL"
+      --label "org.opencontainers.image.created=$CI_JOB_STARTED_AT"
+      --label "org.opencontainers.image.revision=$CI_COMMIT_SHA"
+      --label "org.opencontainers.image.version=$CI_COMMIT_REF_NAME"
+      --tag $DOCKER_IMAGE_TAG
+      .
+
+    - docker push $DOCKER_IMAGE_TAG
+
+Push latest:
+  variables:
+    # We are just playing with Docker here.
+    # We do not need GitLab to clone the source code.
+    GIT_STRATEGY: none
+  stage: push
+  tags:
+    - shell
+  only:
+    # Only "master" should be tagged "latest"
+    - main
+  script:
+    # Because we have no guarantee that this job will be picked up by the same runner
+    # that built the image in the previous step, we pull it again locally
+    - docker pull $DOCKER_IMAGE_TAG
+    # Then we tag it "latest"
+    - docker tag $DOCKER_IMAGE_TAG $DOCKER_REGISTRY_IMAGE:latest
+    # Annnd we push it.
+    - docker push $DOCKER_REGISTRY_IMAGE:latest
+
+# Finally, the goal here is to Docker tag any Git tag
+# GitLab will start a new pipeline everytime a Git tag is created, which is pretty awesome
+Push tag:
+  variables:
+    # Again, we do not need the source code here. Just playing with Docker.
+    GIT_STRATEGY: none
+  stage: push
+  tags:
+    - shell
+  only:
+    # We want this job to be run on tags only.
+    - tags
+  script:
+    - docker pull $DOCKER_IMAGE_TAG
+    - docker tag $DOCKER_IMAGE_TAG $DOCKER_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    - docker push $DOCKER_REGISTRY_IMAGE:$CI_COMMIT_TAG
+
+deploy:
+  stage: deploy
+  tags:
+    - shell
+  script:
+    - |
+      sed -i "s/<TAG>/$CI_COMMIT_TAG/" k8s/depl-site.yaml
+      scp -o 'StrictHostKeyChecking=no' k8s/depl-site.yaml ubuntu@51.250.99.117:
+      ssh -o 'StrictHostKeyChecking=no' ubuntu@51.250.99.117 kubectl apply -f depl-site.yaml
+  only:
+    - tags

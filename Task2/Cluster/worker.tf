@@ -28,7 +28,7 @@ resource "yandex_compute_instance" "worker" {
     ssh-keys = "${local.ssh_opt.user_name}:${local.ssh_opt.pubkey}" 
   }
 
-  scheduling_policy { preemptible = true }
+  scheduling_policy { preemptible = false }
 
   network_interface {
     subnet_id = data.yandex_vpc_network.network.subnet_ids[count.index]

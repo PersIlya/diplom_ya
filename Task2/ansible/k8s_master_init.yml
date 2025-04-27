@@ -9,7 +9,7 @@
   connection: ssh
   vars: 
     pod_network_cidr: "10.0.20.0/18"
-    k8s_master_ip: "10.0.20.26"
+    k8s_master_ip: "10.0.20.14"
     manifest_dir: "/home/GitProject/Diplom/Task2/Cluster"
     manifest_file: "kube-flannel.yml"
   
